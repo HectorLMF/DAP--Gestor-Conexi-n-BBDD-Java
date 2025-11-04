@@ -1,0 +1,247 @@
+@startuml
+interface org.example.db.DBConnection {
+~ String getName()
+~ void connect()
+~ void disconnect()
+~ boolean isConnected()
+~ List<Map<String,Object>> execute(String)
+}
+note top of org.example.db.DBConnection
+
+ * Interfaz que representa una conexión a base de datos (simulada).
+ 
+end note
+
+note left of org.example.db.DBConnection::getName()
+
+     * Obtiene el nombre de la conexión (identificador único).
+     * @return nombre de la conexión
+     
+end note
+note right of org.example.db.DBConnection::connect()
+
+     * Abre/establece la conexión.
+     
+end note
+note left of org.example.db.DBConnection::disconnect()
+
+     * Cierra la conexión.
+     
+end note
+note right of org.example.db.DBConnection::isConnected()
+
+     * Indica si la conexión está establecida.
+     * @return true si está conectada
+     
+end note
+note left of org.example.db.DBConnection::execute(String)
+
+     * Ejecuta una sentencia SQL (simulada) y devuelve filas como lista de mapas.
+     * Este método es un stub; la implementación real la hará cada proveedor.
+     *
+     * @param sql sentencia SQL
+     * @return lista de filas (cada fila: nombreColumna -> valor)
+     
+end note
+
+class org.example.db.postgres.PostgressConnection {
+- String name
++ <<Create>> PostgressConnection(String)
++ String getName()
++ void connect()
++ void disconnect()
++ boolean isConnected()
++ List<Map<String,Object>> execute(String)
+}
+note top of org.example.db.postgres.PostgressConnection
+
+ * Conexión simulada para Postgres (esqueleto).
+ 
+end note
+
+
+
+class org.example.db.mysql.MySQLQuery {
+- DBConnection conn
+- String sql
++ <<Create>> MySQLQuery(DBConnection)
++ void setSql(String)
++ List<Map<String,Object>> execute()
+}
+note top of org.example.db.mysql.MySQLQuery
+
+ * Query simulada para MySQL (esqueleto).
+ 
+end note
+
+
+
+class org.example.web.WebServer {
++ void start(int)
++ void stop()
+}
+note top of org.example.web.WebServer
+
+ * Clase esqueleto para el servidor web del gestor.
+ * Aquí se colocará el arranque del servidor HTTP y los handlers.
+ 
+end note
+
+note left of org.example.web.WebServer::start(int)
+
+     * Inicia el servidor web (stub).
+     * @param port puerto donde arrancar
+     
+end note
+note right of org.example.web.WebServer::stop()
+
+     * Detiene el servidor si está corriendo.
+     
+end note
+
+class org.example.db.mysql.MySQLFactory {
++ DBConnection createConnection(String)
++ DBQuery createQuery(DBConnection)
+}
+note top of org.example.db.mysql.MySQLFactory
+
+ * Fábrica concreta para objetos MySQL (esqueleto).
+ 
+end note
+
+note left of org.example.db.mysql.MySQLFactory::createConnection(String)
+
+     * Crea una conexión MySQL (stub).
+     * @param name nombre lógico
+     * @return instancia de {@link DBConnection}
+     
+end note
+note right of org.example.db.mysql.MySQLFactory::createQuery(DBConnection)
+
+     * Crea una query MySQL asociada a la conexión dada (stub).
+     * @param conn conexión
+     * @return instancia de {@link DBQuery}
+     
+end note
+
+class org.example.db.mysql.MySQLConnection {
+- String name
++ <<Create>> MySQLConnection(String)
++ String getName()
++ void connect()
++ void disconnect()
++ boolean isConnected()
++ List<Map<String,Object>> execute(String)
+}
+note top of org.example.db.mysql.MySQLConnection
+
+ * Conexión simulada para MySQL.
+ * Métodos sin implementar (stubs) para completar en la rama `MYSQL`.
+ 
+end note
+
+
+note left of org.example.db.mysql.MySQLConnection::MySQLConnection(String)
+
+     * Constructor.
+     * @param name nombre lógico de la conexión
+     
+end note
+
+interface org.example.db.DBQuery {
+~ void setSql(String)
+~ List<Map<String,Object>> execute()
+}
+note top of org.example.db.DBQuery
+
+ * Interfaz que representa una consulta que se puede ejecutar sobre una {@link DBConnection}.
+ 
+end note
+
+note left of org.example.db.DBQuery::setSql(String)
+
+     * Establece la sentencia SQL de la query.
+     * @param sql sentencia SQL
+     
+end note
+note right of org.example.db.DBQuery::execute()
+
+     * Ejecuta la query y devuelve los resultados.
+     * @return lista de filas como mapas columna->valor
+     
+end note
+
+class org.example.db.postgres.PostgressQuery {
+- DBConnection conn
+- String sql
++ <<Create>> PostgressQuery(DBConnection)
++ void setSql(String)
++ List<Map<String,Object>> execute()
+}
+note top of org.example.db.postgres.PostgressQuery
+
+ * Query simulada para Postgres (esqueleto).
+ 
+end note
+
+
+
+class org.example.db.postgres.PostgressFactory {
++ DBConnection createConnection(String)
++ DBQuery createQuery(DBConnection)
+}
+note top of org.example.db.postgres.PostgressFactory
+
+ * Fábrica concreta para objetos Postgres (esqueleto).
+ 
+end note
+
+
+class org.example.Main {
++ {static} void main(String[])
+}
+note top of org.example.Main
+
+ * Punto de entrada del proyecto. Actualmente arranca el esqueleto del servidor web.
+ 
+end note
+
+
+interface org.example.db.DBFactory {
+~ DBConnection createConnection(String)
+~ DBQuery createQuery(DBConnection)
+}
+note top of org.example.db.DBFactory
+
+ * Interfaz de la Abstract Factory que produce conexiones y queries según el proveedor.
+ *
+ * @author Equipo
+ 
+end note
+
+note left of org.example.db.DBFactory::createConnection(String)
+
+     * Crea una nueva conexión concreta asociada al proveedor.
+     *
+     * @param name Nombre lógico de la conexión
+     * @return instancia de {@link DBConnection}
+     
+end note
+note right of org.example.db.DBFactory::createQuery(DBConnection)
+
+     * Crea un objeto {@link DBQuery} asociado a la conexión dada.
+     *
+     * @param conn Conexión para la que se crea la query
+     * @return instancia de {@link DBQuery}
+     
+end note
+
+
+
+org.example.db.DBConnection <|.. org.example.db.postgres.PostgressConnection
+org.example.db.DBQuery <|.. org.example.db.mysql.MySQLQuery
+org.example.db.DBFactory <|.. org.example.db.mysql.MySQLFactory
+org.example.db.DBConnection <|.. org.example.db.mysql.MySQLConnection
+org.example.db.DBQuery <|.. org.example.db.postgres.PostgressQuery
+org.example.db.DBFactory <|.. org.example.db.postgres.PostgressFactory
+@enduml
