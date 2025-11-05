@@ -40,16 +40,20 @@ public class PostgressQuery implements DBQuery {
     /**
      * @brief Ejecuta la consulta y devuelve los resultados.
      *
-     * Se espera que esta implementación invoque la ejecución sobre la
-     * conexión (por ejemplo conn.execute(sql)). Actualmente está marcada como
-     * TODO y lanza UnsupportedOperationException.
+     * Esta implementación invoca la ejecución sobre la conexión (conn.execute(sql)).
+     * Si la conexión no está abierta se lanzará IllegalStateException por parte de la conexión.
      *
      * @return Lista de filas (Map columna->valor)
-     * @throws UnsupportedOperationException si no está implementado
      */
     @Override
     public List<Map<String, Object>> execute() {
-        // TODO: implementar delegación a la conexión
-        throw new UnsupportedOperationException("Not implemented");
+        if (conn == null) {
+            throw new IllegalStateException("No connection associated with this query");
+        }
+        if (sql == null || sql.trim().isEmpty()) {
+            throw new IllegalStateException("SQL is not set for this query");
+        }
+        // Delegar en la conexión: ésta validará si está abierta y realizará la simulación
+        return conn.execute(sql);
     }
 }
