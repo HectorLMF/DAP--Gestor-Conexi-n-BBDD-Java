@@ -5,43 +5,32 @@ import org.example.db.DBFactory;
 import org.example.db.DBQuery;
 
 /**
- * Fábrica concreta para crear objetos relacionados con MySQL.
- *
- * Implementa la interfaz {@link org.example.db.DBFactory} y produce instancias
- * de {@link org.example.db.DBConnection} y {@link org.example.db.DBQuery}
- * específicas para el proveedor MySQL. El propósito es separar la creación de
- * objetos concretos del resto de la aplicación (patrón Abstract Factory).
+ * Fábrica para la implementación de MySQL, siguiendo el patrón de Postgres.
+ * Crea instancias de MySQLConnection y MySQLQuery.
  */
 public class MySQLFactory implements DBFactory {
 
     /**
-     * Crea una conexión MySQL simulada.
+     * Crea una conexión MySQL "inteligente".
      *
-     * Crea y devuelve una instancia de {@link MySQLConnection} que actúa como
-     * representación de una conexión a MySQL. Actualmente la conexión es un stub
-     * con métodos sin implementar.
-     *
-     * @param name Nombre lógico para la conexión
-     * @return Instancia de {@link org.example.db.DBConnection}
+     * @param name Nombre lógico para la conexión (ej. "demo")
+     * @return Instancia de DBConnection (que será tu MySQLConnection)
      */
     @Override
     public DBConnection createConnection(String name) {
-        // TODO: implementar
+        // Llama al constructor "inteligente" de MySQLConnection
+        // que automáticamente lee db.properties y usa 'name' como prefijo.
         return new MySQLConnection(name);
     }
 
     /**
-     * Crea una query asociada a la conexión proporcionada.
+     * Crea una query asociada a la conexión MySQL proporcionada.
      *
-     * Devuelve una instancia de {@link MySQLQuery} que delega la ejecución en la
-     * conexión asociada. El objeto devuelto implementa {@link org.example.db.DBQuery}.
-     *
-     * @param conn Conexión sobre la que se ejecutarán las queries
-     * @return Instancia de {@link org.example.db.DBQuery}
+     * @param conn Conexión que se asociará con la query
+     * @return Instancia de DBQuery (que será tu MySQLQuery)
      */
     @Override
     public DBQuery createQuery(DBConnection conn) {
-        // TODO: implementar
         return new MySQLQuery(conn);
     }
 }

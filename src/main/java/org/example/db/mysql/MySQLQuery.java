@@ -6,32 +6,32 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Implementación simulada de una consulta para MySQL.
- *
- * Esta clase representa una consulta SQL asociada a una {@link DBConnection}.
- * Se utiliza para encapsular la sentencia SQL y solicitar su ejecución a la
- * conexión subyacente. Actualmente la ejecución está pendiente de implementar
- * y está marcada con TODO.
+ * Implementación de una consulta para MySQL.
+ * Guarda la sentencia SQL y delega su ejecución en la conexión.
  */
 public class MySQLQuery implements DBQuery {
-    /** Conexión asociada a esta query. */
+
+    /** Conexión asociada. */
     private final DBConnection conn;
-    /** Sentencia SQL a ejecutar. */
+    /** Sentencia SQL configurada para esta query. */
     private String sql;
 
     /**
      * Constructor.
      *
-     * @param conn Conexión sobre la que se ejecutarán las consultas (no nulo)
+     * @param conn Conexión asociada (no nula)
      */
     public MySQLQuery(DBConnection conn) {
+        if (conn == null) {
+            throw new IllegalArgumentException("La conexión no puede ser nula");
+        }
         this.conn = conn;
     }
 
     /**
-     * Establece la sentencia SQL de la query.
+     * Establece la sentencia SQL.
      *
-     * @param sql Sentencia SQL en texto plano (por ejemplo: "SELECT * FROM users")
+     * @param sql Sentencia SQL en texto plano
      */
     @Override
     public void setSql(String sql) {
@@ -39,18 +39,38 @@ public class MySQLQuery implements DBQuery {
     }
 
     /**
-     * Ejecuta la query delegando en la conexión subyacente.
+     * Ejecuta la consulta (previamente guardada con setSql).
      *
-     * La implementación prevista es que este método invoque algo similar a
-     * `conn.execute(sql)` y realice transformaciones mínimas sobre el resultado.
-     * Actualmente no está implementado.
+     * Invoca la ejecución sobre la conexión (conn.execute(sql)).
      *
-     * @return Lista de filas (cada fila: Map nombreColumna->valor)
-     * @throws UnsupportedOperationException si no está implementado
+     * @return Lista de filas (Map columna->valor)
      */
     @Override
     public List<Map<String, Object>> execute() {
-        // TODO: delegar en la conexión la ejecución simulada
-        throw new UnsupportedOperationException("Not implemented");
+
+        if (sql == null || sql.trim().isEmpty()) {
+            throw new IllegalStateException("El SQL no ha sido establecido (usa setSql)");
+        }
+
+        try {
+            // Asegura que la conexión esté abierta
+            if (!conn.isConnected()) {
+                System.out.println("[MySQLQuery] Conexión no está activa. Llamando a connect()...");
+                conn.connect();
+            }
+            // Delegar en la conexión
+            return conn.execute(sql);
+
+        } catch (Exception e) {
+            System.err.println("Error fatal en MySQLQuery.execute: " + e.getMessage());
+            // Intenta desconectar para limpiar
+            try {
+                if (conn.isConnected()) {
+                    conn.disconnect();
+                }
+            } catch (Exception ignored) {}
+
+            throw new RuntimeException("Fallo la consulta SQL: " + sql + ": " + e.getMessage(), e);
+        }
     }
 }
