@@ -106,9 +106,9 @@ Write-Output "Compilando proyecto..."
 $mvnRes = & mvn -DskipTests package
 if ($LASTEXITCODE -ne 0) { Write-Error "Maven build falló."; exit 1 }
 
-Write-Output "Ejecutando demo Postgres..."
-# Invocar Maven pasando los argumentos de forma segura
-$execArgs = @("-DskipTests", "-Dexec.mainClass=org.example.db.postgres.PostgresDemo", "exec:java")
+Write-Output "Ejecutando la aplicación principal (servidor web)..."
+# Invocar Maven pasando los argumentos de forma segura para ejecutar Main
+$execArgs = @("-DskipTests", "-Dexec.mainClass=org.example.Main", "exec:java")
 & mvn @execArgs
 
 Write-Output "Script finalizado."
@@ -127,8 +127,8 @@ Write-Output "Compilando proyecto..."
 $mvnRes = & mvn -DskipTests package
 if ($LASTEXITCODE -ne 0) { Write-Error "Maven build falló."; exit 1 }
 
-Write-Output "Ejecutando demo Postgres (modo simulacion)..."
-$execArgs = @("-DskipTests", "-Dexec.mainClass=org.example.db.postgres.PostgresDemo", "exec:java")
+Write-Output "Ejecutando la aplicación principal en modo simulacion (servidor web)..."
+$execArgs = @("-DskipTests", "-Dexec.mainClass=org.example.Main", "exec:java")
 & mvn @execArgs
 
 Write-Output "Script finalizado (simulacion)."

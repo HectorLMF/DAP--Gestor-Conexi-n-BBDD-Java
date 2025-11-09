@@ -26,7 +26,13 @@ public class MySQLFactory implements DBFactory {
      */
     @Override
     public DBConnection createConnection(String name) {
-        // TODO: implementar
+        /**
+         * NOTE: Actualmente la implementación devuelve una conexión simulada
+         * ({@link MySQLConnection}). Para la versión operativa basada en
+         * MySQL (JDBC) se deberá implementar aquí la creación de una
+         * conexión JDBC configurando url/usuario/contraseña a partir de
+         * variables de entorno o fichero de propiedades.
+         */
         return new MySQLConnection(name);
     }
 
@@ -41,7 +47,7 @@ public class MySQLFactory implements DBFactory {
      */
     @Override
     public DBQuery createQuery(DBConnection conn) {
-        // TODO: implementar
+        // Devolver la query que delega sobre la conexión (simulada actual).
         return new MySQLQuery(conn);
     }
 }

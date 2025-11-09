@@ -4,13 +4,19 @@ import org.example.db.DBConnection;
 import org.example.db.DBFactory;
 import org.example.db.DBQuery;
 
+
 /**
- * @class PostgressFactory
- * @brief Fábrica concreta para crear objetos relacionados con Postgres.
+ * @file PostgressFactory.java
+ * @brief Fábrica concreta para el proveedor Postgres.
  *
- * Implementa {@link org.example.db.DBFactory} y produce instancias concretas
- * de {@link PostgressConnection} y {@link PostgressQuery} que representan la
- * capa de persistencia del proveedor Postgres de forma simulada.
+ * Esta implementación produce instancias de {@link PostgressConnection} y
+ * {@link PostgressQuery}. La fábrica centraliza la creación de objetos relacionados
+ * con el proveedor Postgres y actúa como punto único donde se podría añadir
+ * lógica de configuración (lectura de properties, selección de modo nativo/simulado).
+ *
+ * Recomendación: al implementar la versión MySQL, proporcionar una fábrica
+ * equivalente {@code MySQLFactory} que devuelva conexiones JDBC y queries
+ * que deleguen en esas conexiones.
  */
 public class PostgressFactory implements DBFactory {
 

@@ -16,6 +16,22 @@ import java.util.*;
  * arrancar sesión y ejecutar consultas en modo texto. Está pensada para
  * demostración/desarrollo y no reemplaza al driver JDBC en producción.
  */
+/**
+ * @file PostgressConnection.java
+ * @brief Implementación de conexión para Postgres.
+ *
+ * Esta clase incluye una implementación mínima de cliente del protocolo
+ * PostgreSQL (por sockets) para fines didácticos y de demostración. No es una
+ * implementación completa ni está pensada para producción. Se incluye como
+ * ejemplo de cómo el middleware puede comunicarse con una BBDD sin usar JDBC.
+ *
+ * Puntos importantes para el equipo:
+ * - El código gestiona el startup y el handshake de autenticación (cleartext/md5).
+ * - Proporciona un flag {@code nativeConnected} que indica si la comunicación
+ *   nativa por sockets fue establecida; en caso contrario el sistema puede
+ *   caer en modo simulación.
+ * - Para la versión MySQL recomendamos usar JDBC (comentar más abajo en docs).
+ */
 public class PostgressConnection implements DBConnection {
     private final String name;
 

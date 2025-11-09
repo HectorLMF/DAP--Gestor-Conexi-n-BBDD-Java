@@ -17,8 +17,26 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Web server simple que expone un endpoint POST /query para ejecutar SQL en texto
- * sobre la BBDD seleccionada (mysql|postgres). Responde JSON con filas.
+ * @file SimpleWebServer.java
+ * @brief Servidor HTTP mínimo que expone el endpoint /query para el middleware.
+ *
+ * Este servidor es una implementación ligera basada en {@code com.sun.net.httpserver.HttpServer}
+ * y sirve como ejemplo de cómo exponer una API REST muy simple que actúe como
+ * middleware entre clientes web y las fábricas/conexiones de bases de datos.
+ *
+ * Endpoint principal:
+ * - POST /query
+ *   Body JSON: { "db":"postgres|mysql", "sql":"SELECT ..." }
+ *   Responde JSON con la lista de filas devueltas por la consulta.
+ *
+ * Consideraciones para la versión MySQL:
+ * - El controlador ya soporta la cadena "mysql" y usa {@link MySQLFactory}.
+ * - Asegúrate de que la implementación MySQL devuelva filas en el mismo formato
+ *   List<Map<String,Object>> para compatibilidad.
+ *
+ * Seguridad / mejoras futuras:
+ * - Validar y sanitizar SQL recibida (actualmente se pasa tal cual al proveedor).
+ * - Añadir autenticación/autorización, límites de tiempo y control de concurrencia.
  */
 public class SimpleWebServer {
     private HttpServer server;
