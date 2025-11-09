@@ -22,8 +22,13 @@ public class WebServer {
      * @throws UnsupportedOperationException si la implementación está incompleta
      */
     public void start(int port) {
-        // TODO: implementar servidor web con com.sun.net.httpserver.HttpServer
-        throw new UnsupportedOperationException("Not implemented");
+        // Implementación por defecto: usar el SimpleWebServer
+        try {
+            org.example.web.impl.SimpleWebServer s = new org.example.web.impl.SimpleWebServer();
+            s.start(port);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to start web server", e);
+        }
     }
 
     /**
@@ -34,7 +39,7 @@ public class WebServer {
      * (no-op).
      */
     public void stop() {
-        // TODO: implementar
-        throw new UnsupportedOperationException("Not implemented");
+        // No-op: SimpleWebServer no es expuesto aquí para detenerlo desde esta instancia.
+        // Si necesitamos manejar lifecycle, podemos refactorizar para mantener una referencia.
     }
 }

@@ -25,8 +25,17 @@ public class Main {
         // START: arranque del servidor (esqueleto)
         try {
             server.start(8000);
+                // Mantener la JVM en marcha para que el servidor HTTP atienda peticiones.
+                System.out.println("Press Ctrl+C to stop the server...");
+                Thread.currentThread().join();
         } catch (UnsupportedOperationException ex) {
             System.out.println("WebServer aún no implementado: " + ex.getMessage());
+            } catch (InterruptedException e) {
+                System.out.println("Main interrupted, exiting");
+                Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                System.err.println("Error starting server: " + e.getMessage());
+                e.printStackTrace();
         }
     }
 }

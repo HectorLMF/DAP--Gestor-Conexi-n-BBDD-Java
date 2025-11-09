@@ -34,7 +34,6 @@ public class PostgressFactory implements DBFactory {
      */
     @Override
     public DBQuery createQuery(DBConnection conn) {
-        // TODO: implementar
         return new PostgressQuery(conn);
     }
 }

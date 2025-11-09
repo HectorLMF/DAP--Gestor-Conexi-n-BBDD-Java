@@ -20,6 +20,10 @@ import java.util.Map;
 public class MySQLConnection implements DBConnection {
     /** Identificador lógico de la conexión; se prefiere el prefijo "mysql:". */
     private final String name;
+    private boolean connected = false;
+    // simple in-memory table 'users'
+    private final List<java.util.Map<String,Object>> users = new java.util.ArrayList<>();
+    private int nextId = 1;
 
     /**
      * Constructor.
@@ -56,8 +60,13 @@ public class MySQLConnection implements DBConnection {
      */
     @Override
     public void connect() {
-        // TODO: implementar conexión simulada
-        throw new UnsupportedOperationException("Not implemented");
+        this.connected = true;
+        // initialize with some default rows if empty
+        if (users.isEmpty()) {
+            java.util.Map<String,Object> r1 = new java.util.LinkedHashMap<>(); r1.put("id", nextId++); r1.put("name","Alice"); r1.put("email","alice@example.com"); users.add(r1);
+            java.util.Map<String,Object> r2 = new java.util.LinkedHashMap<>(); r2.put("id", nextId++); r2.put("name","Bob"); r2.put("email","bob@example.com"); users.add(r2);
+            java.util.Map<String,Object> r3 = new java.util.LinkedHashMap<>(); r3.put("id", nextId++); r3.put("name","Eve"); r3.put("email","eve@example.com"); users.add(r3);
+        }
     }
 
     /**
@@ -70,8 +79,7 @@ public class MySQLConnection implements DBConnection {
      */
     @Override
     public void disconnect() {
-        // TODO: implementar desconexión simulada
-        throw new UnsupportedOperationException("Not implemented");
+        this.connected = false;
     }
 
     /**
@@ -82,8 +90,7 @@ public class MySQLConnection implements DBConnection {
      */
     @Override
     public boolean isConnected() {
-        // TODO: implementar estado de la conexión
-        throw new UnsupportedOperationException("Not implemented");
+        return this.connected;
     }
 
     /**
@@ -99,7 +106,53 @@ public class MySQLConnection implements DBConnection {
      */
     @Override
     public List<Map<String, Object>> execute(String sql) {
-        // TODO: implementar ejecución de SQL simulada
-        throw new UnsupportedOperationException("Not implemented");
+        if (!connected) throw new IllegalStateException("Connection not open");
+        String s = sql.trim();
+        // Very naive SQL parsing for demo purposes
+        if (s.regionMatches(true,0,"SELECT",0,6)) {
+            // SELECT * FROM users [WHERE id = N]
+            if (s.toLowerCase().contains("where")) {
+                int idx = s.toLowerCase().indexOf("where");
+                String cond = s.substring(idx+5).trim();
+                // expect id = N
+                if (cond.toLowerCase().startsWith("id")) {
+                    String[] parts = cond.split("=");
+                    int id = Integer.parseInt(parts[1].replaceAll("[^0-9]",""));
+                    List<Map<String,Object>> res = new java.util.ArrayList<>();
+                    for (Map<String,Object> r: users) {
+                        if (((Number)r.get("id")).intValue() == id) res.add(r);
+                    }
+                    return res;
+                }
+            }
+            // return all
+            return new java.util.ArrayList<>(users);
+        } else if (s.regionMatches(true,0,"INSERT",0,6)) {
+            // INSERT INTO users (name,email) VALUES ('X','Y')
+            int vIdx = s.toLowerCase().indexOf("values");
+            String vals = s.substring(vIdx+6).trim();
+            // remove parentheses
+            vals = vals.replaceAll("^\\s*\\(","").replaceAll("\\)\\s*$","");
+            // split by comma not robust but OK here
+            String[] parts = vals.split(",");
+            String name = parts[0].replaceAll("[\\'()\"]","" ).trim();
+            String email = parts[1].replaceAll("[\\'()\"]","" ).trim();
+            java.util.Map<String,Object> row = new java.util.LinkedHashMap<>();
+            row.put("id", nextId++);
+            row.put("name", name);
+            row.put("email", email);
+            users.add(row);
+            return java.util.Collections.emptyList();
+        } else if (s.regionMatches(true,0,"DELETE",0,6)) {
+            // DELETE FROM users WHERE id = N
+            int idx = s.toLowerCase().indexOf("where");
+            String cond = s.substring(idx+5).trim();
+            String[] parts = cond.split("=");
+            int id = Integer.parseInt(parts[1].replaceAll("[^0-9]",""));
+            users.removeIf(r -> ((Number)r.get("id")).intValue() == id);
+            return java.util.Collections.emptyList();
+        }
+        // default: no-op
+        return java.util.Collections.emptyList();
     }
 }

@@ -50,7 +50,8 @@ public class MySQLQuery implements DBQuery {
      */
     @Override
     public List<Map<String, Object>> execute() {
-        // TODO: delegar en la conexión la ejecución simulada
-        throw new UnsupportedOperationException("Not implemented");
+        if (conn == null) throw new IllegalStateException("No connection associated");
+        if (!(conn instanceof MySQLConnection)) throw new IllegalStateException("Connection is not MySQLConnection");
+        return conn.execute(sql);
     }
 }
