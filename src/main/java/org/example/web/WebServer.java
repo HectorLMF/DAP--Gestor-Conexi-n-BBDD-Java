@@ -1,14 +1,24 @@
 package org.example.web;
 
 /**
- * Servidor HTTP mínimo para la interfaz web del gestor de conexiones y queries.
+ * @file WebServer.java
+ * @brief Envoltorio de alto nivel para el servidor HTTP del middleware.
  *
- * Esta clase actúa como envoltorio/esqueleto para un servidor HTTP ligero que
- * expondrá endpoints para gestionar conexiones y ejecutar queries. La
- * implementación prevista usa `com.sun.net.httpserver.HttpServer` para evitar
- * dependencias externas y mantener el proyecto lo más "vanilla" posible.
+ * WebServer actúa como fachada para el servidor HTTP concreto que implementa
+ * los handlers (actualmente {@link org.example.web.impl.SimpleWebServer}).
+ * Separar la interfaz del servidor de su implementación facilita pruebas y
+ * permite sustituir la implementación por otra (por ejemplo, un servidor
+ * embebido diferente) sin cambiar el resto del código.
  *
- * Actualmente el servidor es un stub y los métodos están por implementar.
+ * Responsabilidades:
+ * - Exponer métodos start(port) y stop() para controlar el ciclo de vida.
+ * - Encapsular la configuración de contexts/handlers y del executor.
+ *
+ * Uso típico:
+ * WebServer server = new WebServer();
+ * server.start(8000);
+ * // ...
+ * server.stop();
  */
 public class WebServer {
     /**
@@ -22,8 +32,14 @@ public class WebServer {
      * @throws UnsupportedOperationException si la implementación está incompleta
      */
     public void start(int port) {
-        // TODO: implementar servidor web con com.sun.net.httpserver.HttpServer
-        throw new UnsupportedOperationException("Not implemented");
+        // Implementación por defecto: usar el SimpleWebServer
+        try {
+            // ESTA ES LA LÍNEA CLAVE
+            org.example.web.impl.SimpleWebServer s = new org.example.web.impl.SimpleWebServer();
+            s.start(port);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to start web server", e);
+        }
     }
 
     /**
@@ -34,7 +50,7 @@ public class WebServer {
      * (no-op).
      */
     public void stop() {
-        // TODO: implementar
-        throw new UnsupportedOperationException("Not implemented");
+        // No-op: SimpleWebServer no es expuesto aquí para detenerlo desde esta instancia.
+        // Si necesitamos manejar lifecycle, podemos refactorizar para mantener una referencia.
     }
 }

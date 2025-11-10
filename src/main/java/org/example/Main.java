@@ -3,21 +3,22 @@ package org.example;
 import org.example.web.WebServer;
 
 /**
- * Punto de entrada del proyecto.
+ * @file Main.java
+ * @brief Punto de entrada (launcher) de la aplicación middleware.
  *
- * Arranca el servidor web esqueleto para la interfaz del gestor. En fases
- * posteriores arrancará la configuración de fábricas, la gestión de conexiones
- * y cualquier subsistema adicional.
+ * Este launcher arranca el servidor web que actúa como middleware entre clientes
+ * HTTP y las bases de datos. Mantiene la JVM en ejecución hasta que el proceso
+ * sea detenido (Ctrl+C o señal de terminación).
+ *
+ * Para desarrollo, usar `mvn -Dexec.mainClass=org.example.Main exec:java` o
+ * el script `scripts/start.ps1` que automatiza el arranque (opcionalmente
+ * arrancando una instancia de Postgres en Docker).
  */
 public class Main {
     /**
-     * Punto de entrada de la aplicación.
+     * Arranca el servidor web y mantiene la aplicación en primer plano.
      *
-     * Intenta arrancar el servidor web en el puerto 8000. Actualmente
-     * WebServer.start lanza UnsupportedOperationException porque es un stub,
-     * por lo que se captura la excepción para informar en consola.
-     *
-     * @param args Argumentos de línea de comandos (no usados actualmente)
+     * @param args argumentos de línea de comandos (no usados)
      */
     public static void main(String[] args) {
         System.out.println("DAP-Gestor-BBDD - servidor esqueleto");
@@ -25,8 +26,17 @@ public class Main {
         // START: arranque del servidor (esqueleto)
         try {
             server.start(8000);
+            // Mantener la JVM en marcha para que el servidor HTTP atienda peticiones.
+            System.out.println("Servidor HTTP iniciado. Presiona Ctrl+C para detener.");
+            Thread.currentThread().join();
         } catch (UnsupportedOperationException ex) {
             System.out.println("WebServer aún no implementado: " + ex.getMessage());
+        } catch (InterruptedException e) {
+            System.out.println("Main interrupted, exiting");
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            System.err.println("Error starting server: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }
