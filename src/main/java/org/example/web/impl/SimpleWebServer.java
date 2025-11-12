@@ -81,7 +81,8 @@ public class SimpleWebServer {
       }
 
       DBFactory factory = "mysql".equalsIgnoreCase(db) ? new MySQLFactory() : new PostgressFactory();
-      DBClient client = new DBClient(factory, "web-demo");
+      DBClient client = new DBClient(factory, "mysql");
+
       try {
         client.connect();
         List<Map<String,Object>> rows = client.executeText(sql);
