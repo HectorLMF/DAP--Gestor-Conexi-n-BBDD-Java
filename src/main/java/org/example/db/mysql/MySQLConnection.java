@@ -140,9 +140,10 @@ public class MySQLConnection implements DBConnection {
             // build scramble (concatenate part1 + part2)
             byte[] scramble;
             if (part2.length > 0) {
-                scramble = new byte[part1.length + part2.length];
+                int part2ActualLength = part2.length - 1;
+                scramble = new byte[part1.length + part2ActualLength];
                 System.arraycopy(part1, 0, scramble, 0, part1.length);
-                System.arraycopy(part2, 0, scramble, part1.length, part2.length);
+                System.arraycopy(part2, 0, scramble, part1.length, part2ActualLength); // <-- Usar part2ActualLength
             } else {
                 scramble = part1;
             }
