@@ -32,10 +32,18 @@ public class WebServer {
      * @throws UnsupportedOperationException si la implementación está incompleta
      */
     public void start(int port) {
-        // Implementación por defecto: usar el SimpleWebServer
+        // Preferir servidor basado en servlets (Jetty) si está disponible.
         try {
-            org.example.web.impl.SimpleWebServer s = new org.example.web.impl.SimpleWebServer();
-            s.start(port);
+            org.example.web.servlet.ServletWebServer s = new org.example.web.servlet.ServletWebServer(port);
+            s.start();
+            return;
+        } catch (Throwable t) {
+            // Si Jetty/no-servlet no está disponible, caer al SimpleWebServer
+            System.out.println("Servlet container unavailable or failed to start: " + t.getMessage());
+        }
+        try {
+            org.example.web.impl.SimpleWebServer s2 = new org.example.web.impl.SimpleWebServer();
+            s2.start(port);
         } catch (Exception e) {
             throw new RuntimeException("Failed to start web server", e);
         }

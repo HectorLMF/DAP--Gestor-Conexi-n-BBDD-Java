@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Demo Middleware - Cliente</title>
+</head>
+<body>
+  <h1>Cliente Web del Middleware</h1>
+  <p>Selecciona DB y escribe SQL:</p>
+  <label>DB:
+    <select id="db">
+      <option value="postgres">Postgres</option>
+      <option value="mysql">MySQL</option>
+    </select>
+  </label>
+  <br/>
+  <textarea id="sql" rows="6" cols="80">SELECT * FROM users</textarea>
+  <br/>
+  <button id="run">Ejecutar</button>
+  <div id="message" style="margin-top:12px;color:#333"></div>
+
+  <h2>Resultados (tabla)</h2>
+  <div id="tableContainer"></div>
+
+  <details id="jsonDetails" style="margin-top:12px">
+    <summary>Ver respuesta JSON formateada</summary>
+    <pre id="json" style="max-height:400px;overflow:auto;background:#f6f8fa;padding:10px;border:1px solid #ddd;"></pre>
+  </details>
+
+  <style>
+    table.query-result { border-collapse: collapse; width: 100%; max-width: 100%; }
+    table.query-result th, table.query-result td { border: 1px solid #ddd; padding: 8px; }
+    table.query-result th { background: #f2f4f7; text-align: left; }
+    #tableContainer .no-rows { color: #666; font-style: italic; }
+  </style>
+  <script src="/app.js"></script>
+</body>
+</html>

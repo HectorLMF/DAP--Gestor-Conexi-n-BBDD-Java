@@ -31,8 +31,11 @@ param(
     [string]$PGUser = 'postgres',
     [string]$PGPassword = 'postgres',
     [string]$PGDatabase = 'postgres',
-    [switch]$Foreground = $true,
-    [switch]$Debug = $false
+    # Foreground and Debug accept explicit boolean values to make the script
+    # invocation robust when called from other shells (cmd.exe, CI, etc.).
+    # Use -Foreground:$false to run in background.
+    [bool]$Foreground = $true,
+    [bool]$Debug = $false
 )
 
 function Write-Usage {
@@ -49,9 +52,8 @@ function Write-Usage {
     Write-Output 'Options:'
     Write-Output '  -ContainerName <name>   Docker container name (default: dap-postgres)'
     Write-Output '  -PGPort <port>          Host port to map to Postgres 5432 (default: 5432)'
-    Write-Output '  -Foreground             Run the app in foreground (default). Omit to run background.'
-    Write-Output '  -Debug                  Enable debug mode (sets MAVEN_OPTS to enable remote debugging)
-'
+    Write-Output '  -Foreground <bool>      Run the app in foreground (default: $true). Use -Foreground:$false to run background.'
+    Write-Output '  -Debug <bool>           Enable debug mode (sets MAVEN_OPTS to enable remote debugging)'
 }
 
 function Check-Docker {
