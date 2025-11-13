@@ -1,10 +1,15 @@
 package org.example.db.postgres;
 
 import org.example.db.DBConnection;
+import org.example.db.utilities.*;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -47,23 +52,22 @@ public class PostgressConnection implements DBConnection {
     private InputStream in;
     private OutputStream out;
 
+    // JDBC fallback
+    private Connection jdbcConnection;
+
     // Estado
     private boolean connected = false;
     private boolean nativeConnected = false; // true si la comunicación nativa con el servidor real
-
-    // Config cargada desde resources/db.properties si existe
-    private static final Properties FILE_CONFIG = loadConfigFile();
+    private boolean jdbcFallbackMode = false; // true si usamos JDBC en lugar de socket
 
     public PostgressConnection(String name) {
         this(
                 name,
-                // Buscar en orden: fichero de config (db.properties), variables de entorno, properties del sistema, valor por defecto
-                getConfigValue("PGHOST", "POSTGRES_HOST", "localhost"),
-                Integer.parseInt(getConfigValue("PGPORT", "POSTGRES_PORT", "5432")),
-                getConfigValue("PGDATABASE", "POSTGRES_DB", "postgres"),
-                getConfigValue("PGUSER", "POSTGRES_USER", "postgres"),
-                // IMPORTANT: algunos setups (docker official image) usan POSTGRES_PASSWORD; también permitimos fallback a "postgres" para entornos de desarrollo
-                getConfigValue("PGPASSWORD", "POSTGRES_PASSWORD", "postgres")
+                ConnectionConfig.getConfigValue("PGHOST", "POSTGRES_HOST", "localhost"),
+                ConnectionConfig.getConfigValueAsInt("PGPORT", "POSTGRES_PORT", 5432),
+                ConnectionConfig.getConfigValue("PGDATABASE", "POSTGRES_DB", "postgres"),
+                ConnectionConfig.getConfigValue("PGUSER", "POSTGRES_USER", "postgres"),
+                ConnectionConfig.getConfigValue("PGPASSWORD", "POSTGRES_PASSWORD", "postgres")
         );
     }
 
@@ -142,12 +146,25 @@ public class PostgressConnection implements DBConnection {
 
         } catch (Exception e) {
             nativeConnected = false;
-            connected = false;
             closeSocket();
             System.err.println("[postgres-socket] ✗ FAILED to connect via sockets to " + host + ":" + port);
             System.err.println("[postgres-socket]   Error: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Cannot establish socket connection to PostgreSQL. Check Docker and credentials.", e);
+            System.err.println("[postgres-socket]   Intentando fallback a JDBC...");
+            
+            // Fallback: intentar conexión JDBC usando la utilidad
+            try {
+                String jdbcUrl = "jdbc:postgresql://" + host + ":" + port + "/" + database;
+                jdbcConnection = JDBCConnectionHelper.createConnection(jdbcUrl, user, password);
+                jdbcFallbackMode = true;
+                connected = true;
+                System.out.println("[postgres-jdbc] ✓ Connected via JDBC fallback to " + host + ":" + port + " database '" + database + "'");
+                return;
+            } catch (SQLException jdbcEx) {
+                connected = false;
+                jdbcFallbackMode = false;
+                System.err.println("[postgres-jdbc] ✗ JDBC fallback also failed: " + jdbcEx.getMessage());
+                throw new RuntimeException("Cannot establish connection to PostgreSQL (socket and JDBC both failed). Check Docker and credentials.", jdbcEx);
+            }
         }
     }
 
@@ -155,7 +172,9 @@ public class PostgressConnection implements DBConnection {
     public void disconnect() {
         this.connected = false;
         nativeConnected = false;
+        jdbcFallbackMode = false;
         closeSocket();
+        closeJdbc();
         System.out.println("[postgres-socket] Disconnected");
     }
 
@@ -179,6 +198,16 @@ public class PostgressConnection implements DBConnection {
         if (!isConnected()) {
             throw new IllegalStateException("Connection is not open: " + getName());
         }
+        
+        // Limpiar y normalizar el SQL
+        sql = SQLCleaner.cleanSql(sql);
+        
+        // Si estamos en modo JDBC fallback, usar JDBC
+        if (jdbcFallbackMode && jdbcConnection != null) {
+            return executeJdbc(sql);
+        }
+        
+        // Si no, usar socket nativo
         if (!nativeConnected || socket == null || out == null || in == null) {
             throw new IllegalStateException("Socket connection is not established. Cannot execute query.");
         }
@@ -189,6 +218,34 @@ public class PostgressConnection implements DBConnection {
             return res;
         } catch (Exception e) {
             throw new RuntimeException("Failed to execute query: " + sql + ". Error: " + e.getMessage(), e);
+        }
+    }
+    
+    // Ejecutar query via JDBC
+    private List<Map<String, Object>> executeJdbc(String sql) {
+        System.out.println("[postgres-jdbc] Executing JDBC SQL: " + sql);
+        List<Map<String, Object>> rows = new ArrayList<>();
+        
+        try (Statement stmt = jdbcConnection.createStatement()) {
+            // Usar SQLCleaner para detectar el tipo de consulta
+            boolean isSelect = SQLCleaner.isSelectQuery(sql);
+            
+            if (isSelect) {
+                // Para SELECT, usar executeQuery y convertir con utilidad
+                try (ResultSet rs = stmt.executeQuery(sql)) {
+                    rows = ResultSetConverter.convertToList(rs);
+                    System.out.println("[postgres-jdbc] JDBC query returned rows: " + rows.size());
+                }
+            } else {
+                // Para DDL/DML, usar executeUpdate y crear respuesta con utilidad
+                int affectedRows = stmt.executeUpdate(sql);
+                System.out.println("[postgres-jdbc] JDBC statement executed. Affected rows: " + affectedRows);
+                rows.add(QueryResponseBuilder.createSuccessResponse(affectedRows));
+            }
+            
+            return rows;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to execute JDBC query: " + sql + ". Error: " + e.getMessage(), e);
         }
     }
 
@@ -266,6 +323,11 @@ public class PostgressConnection implements DBConnection {
     private void closeSocket() {
         try { if (socket != null) socket.close(); } catch (Exception ignored) {}
         socket = null; in = null; out = null;
+    }
+    
+    private void closeJdbc() {
+        try { if (jdbcConnection != null) jdbcConnection.close(); } catch (Exception ignored) {}
+        jdbcConnection = null;
     }
 
     // ----------------- Protocol helpers -----------------
@@ -390,37 +452,4 @@ public class PostgressConnection implements DBConnection {
         public void writeByte(int b) { this.write(b); }
     }
 
-    
-
-    // ----------------- Nuevo: lectura de fichero de configuración -----------------
-    private static Properties loadConfigFile() {
-        Properties p = new Properties();
-        try (InputStream in = PostgressConnection.class.getClassLoader().getResourceAsStream("db.properties")) {
-            if (in != null) {
-                p.load(in);
-                System.out.println("[postgres-socket] Loaded db.properties from classpath");
-            }
-        } catch (Exception ignored) {}
-        return p;
-    }
-
-    private static String getConfigValue(String primaryEnv, String secondaryEnv, String defaultValue) {
-        // 1) fichero
-        String v = FILE_CONFIG.getProperty(primaryEnv);
-        if (v != null && !v.isEmpty()) return v;
-        v = FILE_CONFIG.getProperty(secondaryEnv);
-        if (v != null && !v.isEmpty()) return v;
-        // 2) env
-        v = System.getenv(primaryEnv);
-        if (v != null && !v.isEmpty()) return v;
-        v = System.getenv(secondaryEnv);
-        if (v != null && !v.isEmpty()) return v;
-        // 3) system properties
-        v = System.getProperty(primaryEnv);
-        if (v != null && !v.isEmpty()) return v;
-        v = System.getProperty(secondaryEnv);
-        if (v != null && !v.isEmpty()) return v;
-        // 4) default
-        return defaultValue;
-    }
 }
